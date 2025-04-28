@@ -1,6 +1,7 @@
 import random
 import argparse
 import matplotlib.pyplot as plt
+from functools import reduce
 
 
 def martingala(cantidad_actual, apuesta_base, perdidas_consecutivas, _1, _2):
@@ -75,6 +76,23 @@ def simular(capital_inicial, estrategia, capital_infinito, n_tiradas=500, apuest
 
     return historial, banca_rota
 
+def calcular_rachas_de_derrota(historial):
+    rachas = []
+    racha_actual = 0
+
+    for i in range(1, len(historial)):
+        if historial[i] < historial[i - 1]:  # Si pierdes
+            racha_actual += 1
+        else:  # Si ganas
+            if racha_actual > 0:
+                rachas.append(racha_actual)  # Agregar la racha actual a la lista
+            racha_actual = 0  # Reiniciar la racha
+
+    # Si la última racha no se reinició (porque el historial terminó con derrotas)
+    if racha_actual > 0:
+        rachas.append(racha_actual)
+
+    return rachas
 
 def main():
     parser = argparse.ArgumentParser()
@@ -95,34 +113,73 @@ def main():
     capital_infinito = args.a == 'i'
     n_corridas = args.c
     n_tiradas = args.n
+    CAPITAL_INICIAL = 1000
 
     corridas = []
     bancarrotas = 0
 
-    for _ in range(n_corridas):
+    frecuencia_relativa_final = []
+    
+    rachas_de_derrota = []
+
+    for indice_corrida in range(n_corridas):
         historial, banca_rota = simular(
-            capital_inicial=1000,
+            capital_inicial=CAPITAL_INICIAL,
             estrategia=estrategia_seleccionada,
             capital_infinito=capital_infinito,
             n_tiradas=n_tiradas
         )
         
+        rachas_de_derrota.extend(calcular_rachas_de_derrota(historial))
+        
         corridas.append(historial)
+        
         if banca_rota:
             bancarrotas += 1
 
+    plt.figure(figsize=(12, 6))
+
+    plt.subplot(1, 2, 1)
     
     for idx, historial in enumerate(corridas):
         plt.plot(historial, label=f'Corrida {idx+1}')
+
+    plt.axhline(y=CAPITAL_INICIAL, color='b', linestyle='--', label='Capital inicial')
 
     plt.title('Evolución del Capital')
     plt.xlabel('Número de tiradas')
     plt.ylabel('Capital ($)')
     plt.legend()
     plt.grid()
-    plt.show()
 
-    print(f'Bancarrotas: {bancarrotas} de {n_corridas} corridas')
+    diccionario_frecuencias = {}
+    
+    for idx in rachas_de_derrota:
+        if idx in diccionario_frecuencias:
+            diccionario_frecuencias[idx] += 1
+        else:
+            diccionario_frecuencias[idx] = 1
+
+    categorias, frecuencias = zip(*sorted(diccionario_frecuencias.items()))
+    categorias = list(categorias)
+    frecuencias = list(frecuencias)
+    
+    for idx, i in enumerate(frecuencias):
+        frecuencias[idx] = i / len(rachas_de_derrota)
+    
+    # Graficar frecuencia relativa de tiradas positivas
+    plt.subplot(1, 2, 2)  
+
+    plt.bar(categorias, frecuencias, alpha=1)
+
+    plt.title('Frecuencia Relativa de Tiradas Positivas')
+    plt.xlabel('Número de tiradas (n)')
+    plt.ylabel('Frecuencia relativa')
+    plt.legend()
+    plt.grid()
+
+    plt.tight_layout()
+    plt.show()  
 
 if __name__ == '__main__':
     main()

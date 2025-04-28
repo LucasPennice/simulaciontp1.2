@@ -139,10 +139,11 @@ def main():
 
     plt.figure(figsize=(12, 6))
 
-    plt.subplot(1, 2, 1)
+    plt.subplot(2, 1, 1)  # 2 filas, 1 columna, posición 1
     
     for idx, historial in enumerate(corridas):
-        plt.plot(historial, label=f'Corrida {idx+1}')
+        plt.plot(historial)
+        # plt.plot(historial, label=f'Corrida {idx+1}')
 
     plt.axhline(y=CAPITAL_INICIAL, color='b', linestyle='--', label='Capital inicial')
 
@@ -168,8 +169,9 @@ def main():
         frecuencias[idx] = i / len(rachas_de_derrota)
     
     # Graficar frecuencia relativa de tiradas positivas
-    plt.subplot(1, 2, 2)  
-
+    
+    plt.subplot(2, 1, 2)  # 2 filas, 1 columna, posición 2
+    
     plt.bar(categorias, frecuencias, alpha=1)
 
     plt.title('Frecuencia Relativa de Tiradas Positivas')
